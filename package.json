@@ -3,7 +3,7 @@
   "description": "A simple, lightweight network daemon to collect metrics over UDP",
   "author": "Etsy",
   "scripts": {
-    "test": "./run_tests.sh",
+    "test": "./run_tests.sh && mocha test/backends/",
     "start": "node stats.js config.js",
     "install-windows-service": "node_modules\\.bin\\winser -i",
     "uninstall-windows-service": "node_modules\\.bin\\winser -r"
@@ -18,7 +18,8 @@
   "devDependencies": {
     "nodeunit": "0.7.x",
     "underscore": "1.4.x",
-    "temp": "0.4.x"
+    "temp": "0.4.x",
+    "mocha": "*"
   },
   "optionalDependencies": {
     "node-syslog":"1.1.7",
