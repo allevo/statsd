@@ -96,6 +96,7 @@ BackendBase.prototype.postToGraphite = function graphite_post_stats(statString) 
   var last_exception = this.graphiteStats.last_exception || 0;
   var flush_time = this.graphiteStats.flush_time || 0;
   var flush_length = this.graphiteStats.flush_length || 0;
+
   if (this.config.graphiteHost) {
     try {
       var graphite = net.createConnection(this.config.graphitePort, this.config.graphiteHost);
@@ -130,7 +131,7 @@ BackendBase.prototype.postToGraphite = function graphite_post_stats(statString) 
   }
 };
 
-GraphiteBackend.prototype.onFlushEvent = function graphite_flush(ts, metrics) {
+GraphiteBackend.prototype.onFlushEvent = function(ts, metrics) {
   var ts_suffix = ' ' + ts + '\n';
   var starttime = Date.now();
   var statString = '';
