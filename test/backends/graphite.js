@@ -63,6 +63,36 @@ function sendToGraphiteBackend(startupTime, time_stamp, metrics) {
     };
 }
 
+function loadGraphiteStatus(startupTime, time_stamp, metrics) {
+  return function(done) {
+    var test = this;
+
+    setupGraphite(this,
+      function(body) {},
+      function() {
+        var emitter = new events.EventEmitter();
+        var logger = {};
+        require('../../backends/graphite').init(startupTime, graphiteConfig, emitter, logger);
+        emitter.emit('flush', time_stamp, metrics);
+
+        setTimeout(function() {
+          emitter.emit('flush', time_stamp, metrics);
+
+          var metricNumber =  4;
+          test.status = {}
+          emitter.emit('status', function(err, backend, metric, value) {
+            metricNumber--;
+            test.status[backend] = test.status[backend] || {};
+            test.status[backend][metric] = value;
+            if (metricNumber <= 0) {
+              done();
+            }
+          });
+        }, 200);
+    });
+  }
+}
+
 function tearDownGraphite(done) {
   /*jshint validthis:true */
   this.graphiteServer.on('close', done);
@@ -384,3 +414,47 @@ describe('send', function() {
     });
   });
 });
+
+
+describe('status', function() {
+  var metrics = {
+      counters: { 'statsd.bad_lines_seen': 0, 'statsd.packets_received': 1 },
+      gauges: { 'statsd.timestamp_lag': -0.2 },
+      timers: { a_test_value: [ 100 ] },
+      timer_counters: { a_test_value: 1 },
+      sets: {},
+      counter_rates: { 'statsd.bad_lines_seen': 0, 'statsd.packets_received': 5 },
+      timer_data: {
+        a_test_value: {
+          count_90: 1,
+          mean_90: 100,
+          upper_90: 100,
+          sum_90: 100,
+          sum_squares_90: 10000,
+          std: 0,
+          upper: 100,
+          lower: 100,
+          count: 1,
+          count_ps: 5,
+          sum: 100,
+          sum_squares: 10000,
+          mean: 100,
+          median: 100,
+          histogram: { bin_1000: 1 }
+        }
+      },
+      pctThreshold: [ 90 ],
+      histogram: [ { metric: 'a_test_value', bins: [ 1000 ] } ],
+      statsd_metrics: { processing_time: 1 }
+    };
+
+  var startupTime = Math.round(+new Date()/1000) - 200;
+  var time_stamp = Math.round(+new Date()/1000);
+
+    before(loadGraphiteStatus(startupTime, time_stamp, metrics));
+    after(tearDownGraphite);
+
+    it('check graphite', function() {
+      assert.ok('graphite' in this.status);
+    })
+})
